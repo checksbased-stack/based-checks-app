@@ -172,7 +172,7 @@ with st.sidebar:
 # --- MAIN CONTENT ---
 st.markdown("<div style='text-align: center; margin-bottom: 40px;'>", unsafe_allow_html=True)
 st.title("BASED CHECKS STUDIO")
-st.caption("")
+st.caption("CREATE. ANIMATE. DOMINATE.")
 st.markdown("</div>", unsafe_allow_html=True)
 
 if uploaded_file is not None:
@@ -188,7 +188,7 @@ if uploaded_file is not None:
         st.markdown(f"""
             <div style="background:#0A0A0A; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #222; font-size:12px;">
                 <span style="color:#666">GRID:</span> <strong style="color:#FFF">{cols}x{rows}</strong> &nbsp;|&nbsp; 
-                <span style="color:#666">MODE:</span> <strong style="color:#FFF">BLACK PROTECTED v2</strong>
+                <span style="color:#666">MODE:</span> <strong style="color:#FFF">BLACK LOCK + WIDE WAVE</strong>
             </div>
         """, unsafe_allow_html=True)
 
@@ -227,48 +227,44 @@ if uploaded_file is not None:
                         original_rgb = img_grid.getpixel((c, r))
                         
                         # === AGGRESSIVE BLACK PROTECTION ===
-                        # Hitung kecerahan rata-rata (0-255)
+                        # Hitung kecerahan (0-255)
                         brightness = sum(original_rgb) / 3
                         
-                        # Threshold dinaikkan ke 30 (sekitar 12% grey)
-                        # Artinya: Abu-abu gelap pun akan dianggap Hitam dan TIDAK dikasih efek
-                        is_dark = brightness < 30 
+                        # THRESHOLD DINAIKKAN JADI 60 (Sekitar 23% Grey)
+                        # Ini akan memaksa semua warna gelap menjadi tidak aktif (Static)
+                        is_dark_locked = brightness < 60 
                         
-                        if is_dark:
-                            # JIKA GELAP: Pakai warna asli, JANGAN diapa-apain.
-                            # Efek Emboss dilewati total.
+                        if is_dark_locked:
+                            # KUNCI HITAM: Kembalikan warna asli tanpa sentuh efek sama sekali
                             final_rgb = original_rgb
                         else:
-                            # JIKA TERANG/BERWARNA: Baru jalankan efek
-                            
-                            # Logic Pattern
-                            wave_val = -1.0 
+                            # === WIDE DYNAMIC WAVE LOGIC ===
+                            # (Multiplier kecil = Gelombang Lebar)
+                            wave_val = 0.0
                             if pattern_type != "Static (No Animation)":
-                                if pattern_type == "Vertical Wave (Moving Down)": wave_val = math.sin(time_phase * speed - r * 0.5)
-                                elif pattern_type == "Vertical Wave (Moving Up)": wave_val = math.sin(time_phase * speed + r * 0.5)
-                                elif pattern_type == "Diagonal (Top-Left to Bottom-Right)": wave_val = math.sin(time_phase * speed - (c + r) * 0.4)
-                                elif pattern_type == "Diagonal (Top-Right to Bottom-Left)": wave_val = math.sin(time_phase * speed - ((cols - c) + r) * 0.4)
+                                if pattern_type == "Vertical Wave (Moving Down)": 
+                                    wave_val = math.sin(time_phase * speed - r * 0.2) 
+                                elif pattern_type == "Vertical Wave (Moving Up)": 
+                                    wave_val = math.sin(time_phase * speed + r * 0.2) 
+                                elif pattern_type == "Diagonal (Top-Left to Bottom-Right)": 
+                                    wave_val = math.sin(time_phase * speed - (c + r) * 0.15) 
+                                elif pattern_type == "Diagonal (Top-Right to Bottom-Left)": 
+                                    wave_val = math.sin(time_phase * speed - ((cols - c) + r) * 0.15) 
                                 elif pattern_type == "Concentric Box (Center Out)":
                                     cx = cols / 2; cy = rows / 2
                                     dist = max(abs(c - cx), abs(r - cy))
-                                    wave_val = math.sin(time_phase * speed - dist * 0.6)
+                                    wave_val = math.sin(time_phase * speed - dist * 0.2) 
                             
-                            # True Emboss Logic
-                            t = (wave_val + 1) / 2
-                            final_rgb = original_rgb
+                            # === SHADOW & HIGHLIGHT EFFECT ===
+                            r_norm, g_norm, b_norm = original_rgb[0]/255.0, original_rgb[1]/255.0, original_rgb[2]/255.0
+                            h, s, v = colorsys.rgb_to_hsv(r_norm, g_norm, b_norm)
                             
-                            if t > 0.60: 
-                                intensity = (t - 0.60) / 0.40
-                                
-                                # Convert to HSV
-                                r_norm, g_norm, b_norm = original_rgb[0]/255.0, original_rgb[1]/255.0, original_rgb[2]/255.0
-                                h, s, v = colorsys.rgb_to_hsv(r_norm, g_norm, b_norm)
-                                
-                                boost_factor = 0.3 * intensity 
-                                v_new = min(1.0, v + boost_factor)
-                                
-                                r_new, g_new, b_new = colorsys.hsv_to_rgb(h, s, v_new)
-                                final_rgb = (int(r_new*255), int(g_new*255), int(b_new*255))
+                            intensity = 0.4 
+                            brightness_change = wave_val * intensity
+                            v_new = max(0.0, min(1.0, v + brightness_change))
+                            
+                            r_new, g_new, b_new = colorsys.hsv_to_rgb(h, s, v_new)
+                            final_rgb = (int(r_new*255), int(g_new*255), int(b_new*255))
 
                         # Draw Pixel
                         x = c * slot_size
